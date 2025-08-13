@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logoEspol from "./assets/logoToraxView.png";
 import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
+import { API_URL } from "./config";
+
 
 export default function Resultados() {
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ export default function Resultados() {
   useEffect(() => {
     if (!token) return;
     setLoading(true);
-    fetch("https://backend-toraxview.onrender.com/mis_registros", {
+    fetch(`${API_URL}/mis_registros`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())

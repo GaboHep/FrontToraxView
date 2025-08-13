@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logoEspol from "./assets/logoToraxView.png";
 import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
+import { API_URL } from "./config";
+
 
 export default function Feedbacks() {
   const navigate = useNavigate();
@@ -33,7 +35,7 @@ export default function Feedbacks() {
   // Cargar lista de radiólogos
   useEffect(() => {
     if (!token) return;
-    fetch("https://backend-toraxview.onrender.com/radiologos", {
+    fetch(`${API_URL}/radiologos`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -45,7 +47,7 @@ export default function Feedbacks() {
   const cargarRegistros = (id) => {
     setActivoId(id);
     setLoading(true);
-    fetch(`https://backend-toraxview.onrender.com/registros_por_radiologo/${id}`, {
+    fetch(`${API_URL}/registros_por_radiologo/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())

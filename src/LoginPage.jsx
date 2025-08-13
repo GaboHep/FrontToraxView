@@ -3,6 +3,8 @@ import "./LoginPage.css";
 import { useNavigate } from "react-router-dom";
 import logoEspol from "./assets/logoToraxView.png";
 import { useAuth } from "./context/AuthContext";
+import { API_URL } from "./config";
+
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -23,7 +25,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      const response = await fetch("https://backend-toraxview.onrender.com/auth/login", {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password })

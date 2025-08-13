@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logoEspol from "./assets/logoToraxView.png";
 import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
+import { API_URL } from "./config";
+
 
 export default function Usuarios() {
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ export default function Usuarios() {
   const fetchUsers = () => {
     if (!token) return;
     setLoadingList(true);
-    fetch("https://backend-toraxview.onrender.com/radiologos", {
+    fetch(`${API_URL}/radiologos`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -66,7 +68,7 @@ export default function Usuarios() {
 
   const handleDelete = (id) => {
     if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
-    fetch(`https://backend-toraxview.onrender.com/radiologos/${id}`, {
+    fetch(`${API_URL}/radiologos/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -84,8 +86,8 @@ export default function Usuarios() {
     try {
       const method = editingId ? "PUT" : "POST";
       const url = editingId
-        ? `https://backend-toraxview.onrender.com/radiologos/${editingId}`
-        : "https://backend-toraxview.onrender.com/radiologos";
+        ? `${API_URL}/radiologos/${editingId}`
+        : `${API_URL}/radiologos`;
 
       // Construir payload: si se edita y password está vacío, no lo enviamos
       const payload = editingId

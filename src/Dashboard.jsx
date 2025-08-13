@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import logoEspol from "./assets/logoToraxView.png";
 import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
+import { API_URL } from "./config";
+
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -107,7 +109,7 @@ export default function Dashboard() {
         fd.append("file", blob, "image.png");
       }
 
-      const response = await fetch("https://backend-toraxview.onrender.com/predict", {
+      const response = await fetch(`${API_URL}/predict`, {
         method: "POST",
         body: fd,
       });
@@ -144,7 +146,7 @@ export default function Dashboard() {
     };
 
     try {
-      const response = await fetch("https://backend-toraxview.onrender.com/guardar_registro", {
+      const response = await fetch(`${API_URL}/guardar_registro`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
