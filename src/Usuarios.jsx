@@ -5,7 +5,6 @@ import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
 import { API_URL } from "./config";
 
-
 export default function Usuarios() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,6 +19,17 @@ export default function Usuarios() {
   const [form, setForm] = useState({ username: "", password: "" });
   const [editingId, setEditingId] = useState(null);
   const [q, setQ] = useState("");
+
+  // --- NUEVO: estado para modal de confirmación y toast ---
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [toast, setToast] = useState({ show: false, kind: "info", msg: "" });
+
+  const showToast = (msg, kind = "info", ms = 2500) => {
+    setToast({ show: true, kind, msg });
+    window.clearTimeout(showToast._t);
+    showToast._t = window.setTimeout(() => setToast({ show: false, kind, msg: "" }), ms);
+  };
 
   // Cargar usuarios
   const fetchUsers = () => {
@@ -42,6 +52,7 @@ export default function Usuarios() {
       .catch((err) => {
         console.error("Error al obtener usuarios:", err);
         setRadiologos([]);
+        showToast("Error al cargar usuarios", "error");
       })
       .finally(() => setLoadingList(false));
   };
@@ -66,17 +77,33 @@ export default function Usuarios() {
     setEditingId(rad.id);
   };
 
-  const handleDelete = (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
-    fetch(`${API_URL}/radiologos/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Error al eliminar");
-        setRadiologos((prev) => prev.filter((r) => r.id !== id));
-      })
-      .catch(() => alert("❌ No se pudo eliminar el usuario."));
+  // --- NUEVO: abrir/cerrar modal de confirmación ---
+  const openConfirmDelete = (id) => {
+    setDeleteId(id);
+    setConfirmOpen(true);
+  };
+  const closeConfirm = () => {
+    setConfirmOpen(false);
+    setDeleteId(null);
+  };
+
+  // --- NUEVO: confirmar eliminación con UI bonita + toast ---
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const res = await fetch(`${API_URL}/radiologos/${deleteId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al eliminar");
+      setRadiologos((prev) => prev.filter((r) => r.id !== deleteId));
+      showToast("Usuario eliminado", "success");
+    } catch (e) {
+      console.error(e);
+      showToast("No se pudo eliminar el usuario", "error");
+    } finally {
+      closeConfirm();
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -112,9 +139,10 @@ export default function Usuarios() {
 
       resetForm();
       fetchUsers();
+      showToast(editingId ? "Usuario actualizado" : "Usuario creado", "success");
     } catch (err) {
       console.error(err);
-      alert("❌ No se pudo guardar el usuario.");
+      showToast("No se pudo guardar el usuario", "error");
     } finally {
       setSaving(false);
     }
@@ -126,6 +154,24 @@ export default function Usuarios() {
     if (!term) return radiologos;
     return radiologos.filter((r) => String(r.username || "").toLowerCase().includes(term));
   }, [q, radiologos]);
+
+  // Helpers para estilos del toast
+  const toastStyle = useMemo(() => {
+    const base = {
+      position: "fixed",
+      right: 16,
+      bottom: 16,
+      padding: "10px 14px",
+      borderRadius: 10,
+      boxShadow: "0 8px 20px rgba(0,0,0,.18)",
+      color: "#fff",
+      fontWeight: 600,
+      zIndex: 9999,
+    };
+    if (toast.kind === "success") return { ...base, background: "#16a34a" };
+    if (toast.kind === "error") return { ...base, background: "#dc2626" };
+    return { ...base, background: "#111827" };
+  }, [toast]);
 
   return (
     <div className="dw-wrap">
@@ -274,7 +320,7 @@ export default function Usuarios() {
                               <button className="btn ghost" onClick={() => handleEdit(r)} disabled={saving}>
                                 Editar
                               </button>
-                              <button className="btn ghost" onClick={() => handleDelete(r.id)} disabled={saving}>
+                              <button className="btn ghost" onClick={() => openConfirmDelete(r.id)} disabled={saving}>
                                 Eliminar
                               </button>
                             </div>
@@ -295,6 +341,31 @@ export default function Usuarios() {
           </section>
         </main>
       </div>
+
+        {toast.show && (
+          <div className={`toast ${toast.kind}`} role="status" aria-live="polite">
+            {toast.msg}
+          </div>
+        )}
+
+        {/* Modal de confirmación */}
+        {confirmOpen && (
+          <div className="modal-overlay" aria-modal="true" role="dialog" onClick={closeConfirm}>
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <h3 className="cardTitle" style={{ marginBottom: 6 }}>Eliminar usuario</h3>
+              <p className="muted" style={{ marginBottom: 16 }}>
+                Esta acción no se puede deshacer. ¿Deseas eliminar este usuario?
+              </p>
+              <div className="dw-actions" style={{ justifyContent: "flex-end", gap: 10 }}>
+                <button className="btn ghost" onClick={closeConfirm} disabled={saving}>Cancelar</button>
+                <button className="btn primary" onClick={confirmDelete} disabled={saving}>
+                  {saving ? "Eliminando…" : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
     </div>
   );
 }

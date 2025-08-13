@@ -454,4 +454,38 @@ body{background:var(--bg); color:var(--text)}
   to{   opacity: 1; transform: translateY(0)   scale(1);   }
 }
 
+/* ======= Modal de confirmación (oscuro) ======= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: grid;
+  place-items: center;
+  z-index: 9998;
+  padding: 16px;
+}
+
+.modal-card {
+  /* Fondo y borde a juego con tu toast */
+  background: linear-gradient(180deg, rgba(18,25,48,.98), rgba(14,20,38,.98));
+  color: #e9eefc;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  max-width: 420px;
+  width: 100%;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  animation: modalScaleIn .25s ease-out;
+}
+
+.modal-card .cardTitle { color: #e9eefc; }
+.modal-card .muted     { color: #a9b7d9; }
+.modal-card .btn.ghost { border-color: rgba(255,255,255,.15); color: #e9eefc; }
+
+@keyframes modalScaleIn {
+  from { opacity: 0; transform: scale(.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+
 
