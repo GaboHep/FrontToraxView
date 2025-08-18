@@ -136,6 +136,18 @@ body{background:var(--bg); color:var(--text)}
 .btn.ghost:hover{border-color:var(--primary)}
 .btn:active{transform:translateY(1px)}
 
+.btn.danger {
+  background-color: #e74c3c;  /* rojo intenso */
+  color: #fff;
+  border: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn.danger:hover {
+  background-color: #c0392b;  /* rojo más oscuro al pasar el mouse */
+}
+
+
 /* Title */
 .dw-title{
   font-size:22px; font-weight:800; margin:0 0 14px;

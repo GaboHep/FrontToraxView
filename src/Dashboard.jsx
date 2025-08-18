@@ -342,13 +342,14 @@ export default function Dashboard() {
                     type="date"
                     name="inferenceDate"
                     value={formData.inferenceDate}
-                    onChange={handleInputChange}
+                    readOnly
+                    disabled
                   />
                 </label>
               </div>
 
               <div className="dw-actions">
-                <button className="btn ghost" onClick={resetAll}>Borrar Todo</button>
+                <button className="btn danger" onClick={resetAll}>Cancelar</button>
                 <button className="btn primary" onClick={handleDiagnose} disabled={!image || loading}>
                   {loading ? "Analizando…" : "Analizar imagen"}
                 </button>
