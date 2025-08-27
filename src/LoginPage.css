@@ -153,3 +153,52 @@
   .lp-authCol{max-width:560px}
   .lp-card{margin-top:8px}
 }
+
+/* Tooltip contenedor */
+.lp-tooltipWrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+/* Tooltip oculto */
+.lp-about {
+  display: none;
+  position: absolute;
+  top: 120%;        /* debajo del texto */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 300px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  z-index: 100;
+  text-align: left;
+}
+
+/* Mostrar tooltip en hover */
+.lp-tooltipWrapper:hover .lp-about {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Flechita opcional */
+.lp-about::before {
+  content: "";
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px;
+  border-style: solid;
+  border-color: transparent transparent rgba(0, 0, 0, 0.85) transparent;
+}
+
+/* Animación suave */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
