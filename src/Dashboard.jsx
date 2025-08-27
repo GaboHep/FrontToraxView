@@ -283,6 +283,7 @@ export default function Dashboard() {
               ) : (
                 <div className="dw-dropzone">
                   <p className="dz-arrow" aria-hidden>⬇️</p>
+                  <p>Solo se aceptan PNG, JPG, JPEG</p>
                   <p>Arrastra y suelta una imagen o</p>
                   <label className="btn primary">
                     Seleccionar imagen
