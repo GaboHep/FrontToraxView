@@ -60,27 +60,9 @@ export default function LoginPage() {
       <section className="lp-grid">
         {/* Hero + descripción */}
         <div className="lp-hero">
-          <h1 className="lp-title">
-            Análisis de <span className="lp-grad">radiografías de tórax</span> asistido por IA
+          <h1 className="lp-title" >
+            Análisis de radiografías de tórax asistido por IA
           </h1>
-          <p className="lp-subtitle">
-            Sube un estudio, completa los datos del paciente y obtén una predicción clara y ordenada por probabilidad.
-          </p>
-
-          <ul className="lp-bullets">
-            <li>Flujo rápido: subir imagen → llenar los datos → predicción → realiza observaciones.</li>
-            <li>Resultados interpretables con barras de confianza.</li>
-          </ul>
-
-          
-
-          <div id="about" className="lp-about">
-            <h3>¿Qué es ToraxVIEW?</h3>
-            <p>
-              Plataforma de apoyo al diagnóstico para una evaluación temprana y no invasiva de alteraciones
-              tóracica en contextos de salud preventiva.
-            </p>
-          </div>
         </div>
 
         {/* Login Card */}
@@ -117,6 +99,8 @@ export default function LoginPage() {
               </label>
 
               <br></br>
+
+              
            
 
               {error && <div className="lp-error">{error}</div>}
@@ -128,6 +112,13 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+          <div id="about" className="lp-about">
+            <h3>¿Qué es ToraxVIEW?</h3>
+            <p>
+              ToraxView es una plataforma de apoyo al diagnóstico para una evaluación temprana y no invasiva de alteraciones
+              torácicas en contextos de salud preventiva. Sube un estudio, completa los datos del paciente y obtén una predicción clara y ordenada por probabilidad.
+            </p>
+          </div>
 
       <footer className="lp-footer">
         <small>© {new Date().getFullYear()} ToraxVIEW · Todos los derechos reservados</small>

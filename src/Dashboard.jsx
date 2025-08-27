@@ -5,8 +5,7 @@ import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
 import { API_URL } from "./config";
 
-
-export default function Dashboard() {
+export default function Dashboard() { 
   const navigate = useNavigate();
   const location = useLocation();
   const { auth, logout } = useAuth();
@@ -23,15 +22,24 @@ export default function Dashboard() {
   // Toast de aviso { type: "success" | "error", text: string }
   const [notice, setNotice] = useState(null);
 
+  // Modal para formulario incompleto
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+
   const [formData, setFormData] = useState({
     key: crypto.randomUUID(),
     birthDate: "",
     gender: "",
     city: "",
     parish: "",
-    canton: "",
+    provincia: "",
     inferenceDate: new Date().toISOString().split("T")[0],
   });
+
+  // --- validación: todos los campos requeridos deben estar llenos ---
+  const isFormComplete = useMemo(() => {
+    const requiredKeys = ["birthDate", "gender", "provincia", "city", "parish"];
+    return requiredKeys.every((k) => String(formData[k] ?? "").trim() !== "");
+  }, [formData]);
 
   // ---------- handlers ----------
   const handleInputChange = (e) => {
@@ -51,7 +59,7 @@ export default function Dashboard() {
       gender: "",
       city: "",
       parish: "",
-      canton: "",
+      provincia: "",
       inferenceDate: new Date().toISOString().split("T")[0],
     });
     setShowResults(false);
@@ -93,8 +101,13 @@ export default function Dashboard() {
     e.stopPropagation();
   };
 
-  // ---------- predict (sin simulación de porcentaje) ----------
+  // ---------- predict (bloquea si el form está incompleto) ----------
   const handleDiagnose = async () => {
+    // Si faltan datos, mostramos modal y cortamos
+    if (!isFormComplete) {
+      setShowIncompleteModal(true);
+      return;
+    }
     if (!fileObj && !image) return;
 
     setLoading(true);
@@ -138,7 +151,7 @@ export default function Dashboard() {
       gender: formData.gender,
       city: formData.city,
       parish: formData.parish,
-      canton: formData.canton,
+      provincia: formData.provincia,
       precision: precision,
       resultados: JSON.stringify(resultados),
       feedback: feedback,
@@ -157,7 +170,6 @@ export default function Dashboard() {
 
       if (!response.ok) throw new Error("Error al guardar en base de datos");
 
-      // aviso de éxito + flujo hacia /resultados
       setNotice({ type: "success", text: "Registro guardado correctamente" });
       setTimeout(() => {
         resetAll();
@@ -175,11 +187,17 @@ export default function Dashboard() {
     [precision]
   );
 
+  // helper para llevar al usuario al formulario desde el modal
+  const goToForm = () => {
+    setShowIncompleteModal(false);
+    const el = document.querySelector(".dw-form");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
     <div className="dw-wrap">
       {/* Header */}
       <header className="dw-header">
-      
         <div className="lp-brand">
           <div className="logo-badge">
             <img src={logoEspol} alt="ESPOL" className="lp-logo" />
@@ -286,12 +304,18 @@ export default function Dashboard() {
                     name="birthDate"
                     value={formData.birthDate}
                     onChange={handleInputChange}
+                    required
                   />
                 </label>
 
                 <label>
                   Género
-                  <select name="gender" value={formData.gender} onChange={handleInputChange}>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleInputChange}
+                    required
+                  >
                     <option value="">Seleccione</option>
                     <option value="Masculino">Masculino</option>
                     <option value="Femenino">Femenino</option>
@@ -302,6 +326,18 @@ export default function Dashboard() {
 
               <div className="formRow">
                 <label>
+                  Provincia
+                  <input
+                    type="text"
+                    name="provincia"
+                    value={formData.provincia}
+                    onChange={handleInputChange}
+                    placeholder="Escriba la provincia"
+                    required
+                  />
+                </label>
+
+                <label>
                   Ciudad
                   <input
                     type="text"
@@ -309,9 +345,12 @@ export default function Dashboard() {
                     value={formData.city}
                     onChange={handleInputChange}
                     placeholder="Escriba la ciudad"
+                    required
                   />
                 </label>
+              </div>
 
+              <div className="formRow">
                 <label>
                   Parroquia
                   <input
@@ -320,26 +359,13 @@ export default function Dashboard() {
                     value={formData.parish}
                     onChange={handleInputChange}
                     placeholder="Escriba la parroquia"
-                  />
-                </label>
-              </div>
-
-              <div className="formRow">
-                <label>
-                  Cantón
-                  <input
-                    type="text"
-                    name="canton"
-                    value={formData.canton}
-                    onChange={handleInputChange}
-                    placeholder="Escriba el cantón"
+                    required
                   />
                 </label>
 
                 <label>
-                  Fecha de inferencia
                   <input
-                    type="date"
+                    type="hidden"
                     name="inferenceDate"
                     value={formData.inferenceDate}
                     readOnly
@@ -350,14 +376,20 @@ export default function Dashboard() {
 
               <div className="dw-actions">
                 <button className="btn danger" onClick={resetAll}>Cancelar</button>
-                <button className="btn primary" onClick={handleDiagnose} disabled={!image || loading}>
+                <button
+                  className="btn primary"
+                  onClick={handleDiagnose}
+                  disabled={!image || loading || !isFormComplete}
+                  aria-disabled={!image || loading || !isFormComplete}
+                  title={!isFormComplete ? "Completa todos los datos del paciente" : ""}
+                >
                   {loading ? "Analizando…" : "Analizar imagen"}
                 </button>
               </div>
             </div>
           </section>
 
-          {/* Progreso indeterminado (igual a Resultados) */}
+          {/* Progreso indeterminado */}
           {loading && (
             <section className="card dw-progress" style={{ marginTop: 10 }}>
               <div className="progressRow">
@@ -394,12 +426,6 @@ export default function Dashboard() {
                 ) : (
                   <p className="muted">No hay resultados disponibles.</p>
                 )}
-
-                {/* precisionPct && (
-                  <p className="precision">
-                    Precisión general del modelo: <strong>{precisionPct}%</strong>
-                  </p>
-                )} */}
               </div> 
 
               {/* Observaciones */}
@@ -410,9 +436,16 @@ export default function Dashboard() {
                   placeholder="Escriba sus observaciones aquí…"
                   value={feedback}
                   onChange={(e) => setFeedback(e.target.value)}
+                  maxLength={300}
                 />
+                <div className="char-counter">{feedback.length}/300</div>
+
                 <div className="dw-actions end">
-                  <button className="btn primary" onClick={handleGuardar} disabled={!showResults}>
+                  <button
+                    className="btn primary"
+                    onClick={handleGuardar}
+                    disabled={!showResults}
+                  >
                     Guardar
                   </button>
                 </div>
@@ -421,6 +454,24 @@ export default function Dashboard() {
           )}
         </main>
       </div>
+
+      {/* Modal: formulario incompleto */}
+      {showIncompleteModal && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-incomplete-title">
+          <div className="modal-card">
+            <h3 id="modal-incomplete-title" className="cardTitle">Faltan datos</h3>
+            <p className="muted">Completa todos los datos del paciente antes de analizar la imagen.</p>
+            <div className="dw-actions" style={{ justifyContent: "flex-end", marginTop: 12 }}>
+              <button className="btn ghost" onClick={() => setShowIncompleteModal(false)}>
+                Cerrar
+              </button>
+              <button className="btn primary" onClick={goToForm}>
+                Completar ahora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast de aviso */}
       {notice && (
