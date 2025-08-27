@@ -22,8 +22,11 @@ export default function Dashboard() {
   // Toast de aviso { type: "success" | "error", text: string }
   const [notice, setNotice] = useState(null);
 
-  // Modal para formulario incompleto
-  const [showIncompleteModal, setShowIncompleteModal] = useState(false);
+  // Modales
+  const [showIncompleteModal, setShowIncompleteModal] = useState(false);         // Analizar
+  const [showIncompleteSaveModal, setShowIncompleteSaveModal] = useState(false); // Guardar
+  const [saveModalMsg, setSaveModalMsg] = useState("");                          // Mensaje dinámico modal Guardar
+  const MIN_FEEDBACK = 10;
 
   const [formData, setFormData] = useState({
     key: crypto.randomUUID(),
@@ -142,55 +145,75 @@ export default function Dashboard() {
     }
   };
 
-  // ---------- save ----------
-  const handleGuardar = async () => {
-    const nuevoRegistro = {
-      key: formData.key,
-      inference_date: formData.inferenceDate,
-      birth_date: formData.birthDate,
-      gender: formData.gender,
-      city: formData.city,
-      parish: formData.parish,
-      provincia: formData.provincia,
-      precision: precision,
-      resultados: JSON.stringify(resultados),
-      feedback: feedback,
-      image: image, // dataURL
-    };
+  // ---------- save (bloquea si no hay resultados o feedback insuficiente) ----------
 
-    try {
-      const response = await fetch(`${API_URL}/guardar_registro`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${auth?.token}`,
-        },
-        body: JSON.stringify(nuevoRegistro),
-      });
+const handleGuardar = async () => {
+  // solo pedimos que se haya realizado el análisis (mostrar resultados)
+  if (!showResults) {
+    setSaveModalMsg("Debes generar resultados con “Analizar imagen” antes de guardar el análisis.");
+    setShowIncompleteSaveModal(true);
+    return;
+  }
+  // pedimos feedback mínimo
+  if (feedback.trim().length < MIN_FEEDBACK) {
+    setSaveModalMsg(`Agrega observaciones (mínimo ${MIN_FEEDBACK} caracteres).`);
+    setShowIncompleteSaveModal(true);
+    return;
+  }
 
-      if (!response.ok) throw new Error("Error al guardar en base de datos");
-
-      setNotice({ type: "success", text: "Registro guardado correctamente" });
-      setTimeout(() => {
-        resetAll();
-        navigate("/resultados");
-      }, 3000);
-    } catch (error) {
-      console.error(error);
-      setNotice({ type: "error", text: "Error al guardar el registro" });
-      setTimeout(() => setNotice(null), 3000);
-    }
+  const nuevoRegistro = {
+    key: formData.key,
+    inference_date: formData.inferenceDate,
+    birth_date: formData.birthDate,
+    gender: formData.gender,
+    city: formData.city,
+    parish: formData.parish,
+    provincia: formData.provincia,
+    precision,
+    resultados: JSON.stringify(resultados), // puede estar vacío, y está OK
+    feedback,
+    image, // dataURL
   };
+
+  try {
+    const response = await fetch(`${API_URL}/guardar_registro`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${auth?.token}`,
+      },
+      body: JSON.stringify(nuevoRegistro),
+    });
+
+    if (!response.ok) throw new Error("Error al guardar en base de datos");
+
+    setNotice({ type: "success", text: "Registro guardado correctamente" });
+    setTimeout(() => {
+      resetAll();
+      navigate("/resultados");
+    }, 3000);
+  } catch (error) {
+    console.error(error);
+    setNotice({ type: "error", text: "Error al guardar el registro" });
+    setTimeout(() => setNotice(null), 3000);
+  }
+};
+
 
   const precisionPct = useMemo(
     () => (precision != null ? (precision * 100).toFixed(2) : null),
     [precision]
   );
 
-  // helper para llevar al usuario al formulario desde el modal
+  // helpers: llevar al usuario a la sección correspondiente
   const goToForm = () => {
     setShowIncompleteModal(false);
     const el = document.querySelector(".dw-form");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const goToAnalyze = () => {
+    setShowIncompleteSaveModal(false);
+    const el = document.querySelector(".dw-upload");
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -283,7 +306,6 @@ export default function Dashboard() {
               ) : (
                 <div className="dw-dropzone">
                   <p className="dz-arrow" aria-hidden>⬇️</p>
-                  <p>Solo se aceptan PNG, JPG, JPEG</p>
                   <p>Arrastra y suelta una imagen o</p>
                   <label className="btn primary">
                     Seleccionar imagen
@@ -380,8 +402,8 @@ export default function Dashboard() {
                 <button
                   className="btn primary"
                   onClick={handleDiagnose}
-                  disabled={!image || loading || !isFormComplete}
-                  aria-disabled={!image || loading || !isFormComplete}
+                  disabled={!image || loading} // sólo bloquea si no hay imagen o está cargando
+                  aria-disabled={!isFormComplete}
                   title={!isFormComplete ? "Completa todos los datos del paciente" : ""}
                 >
                   {loading ? "Analizando…" : "Analizar imagen"}
@@ -405,7 +427,10 @@ export default function Dashboard() {
             <section className="dw-grid-2">
               {/* Resultados */}
               <div className="card">
-                <h3 className="cardTitle">Resultados</h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h3 className="cardTitle">Resultados</h3>
+                  <span className="cardTitle">Probabilidades</span>
+                </div>
 
                 {Array.isArray(resultados) && resultados.length > 0 ? (
                   <div className="resultsList">
@@ -439,13 +464,27 @@ export default function Dashboard() {
                   onChange={(e) => setFeedback(e.target.value)}
                   maxLength={300}
                 />
-                <div className="char-counter">{feedback.length}/300</div>
+                <div className={`char-counter ${
+                  feedback.trim().length >= 280 ? "warn" :
+                  feedback.trim().length < MIN_FEEDBACK ? "error" : ""
+                }`}>
+                  {feedback.length}/300
+                </div>
+                {feedback.trim().length < MIN_FEEDBACK && (
+                  <div className="form-hint error">Mínimo {MIN_FEEDBACK} caracteres.</div>
+                )}
 
                 <div className="dw-actions end">
                   <button
                     className="btn primary"
-                    onClick={handleGuardar}
-                    disabled={!showResults}
+                    onClick={handleGuardar} // pop-up si no hay resultados o feedback < MIN_FEEDBACK
+                    title={
+                      !showResults
+                        ? "Genera resultados antes de guardar"
+                        : feedback.trim().length < MIN_FEEDBACK
+                        ? `Agrega observaciones (mínimo ${MIN_FEEDBACK} caracteres)`
+                        : ""
+                    }
                   >
                     Guardar
                   </button>
@@ -456,9 +495,15 @@ export default function Dashboard() {
         </main>
       </div>
 
-      {/* Modal: formulario incompleto */}
+      {/* Modal: formulario incompleto (Analizar) */}
       {showIncompleteModal && (
-        <div className="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-incomplete-title">
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-incomplete-title"
+          style={{ zIndex: 99999 }}  // fuerza que se vea encima
+        >
           <div className="modal-card">
             <h3 id="modal-incomplete-title" className="cardTitle">Faltan datos</h3>
             <p className="muted">Completa todos los datos del paciente antes de analizar la imagen.</p>
@@ -469,6 +514,36 @@ export default function Dashboard() {
               <button className="btn primary" onClick={goToForm}>
                 Completar ahora
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: guardar incompleto (sin resultados o feedback corto) */}
+      {showIncompleteSaveModal && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-save-title"
+          style={{ zIndex: 99999 }}  // fuerza que se vea encima
+        >
+          <div className="modal-card">
+            <h3 id="modal-save-title" className="cardTitle">No se puede guardar</h3>
+            <p className="muted">{saveModalMsg || "Debes generar resultados antes de guardar."}</p>
+            <div className="dw-actions" style={{ justifyContent: "flex-end", marginTop: 12 }}>
+              <button className="btn ghost" onClick={() => setShowIncompleteSaveModal(false)}>
+                Cerrar
+              </button>
+              {!showResults ? (
+                <button className="btn primary" onClick={goToAnalyze}>
+                  Ir a analizar
+                </button>
+              ) : (
+                <button className="btn primary" onClick={() => setShowIncompleteSaveModal(false)}>
+                  Entendido
+                </button>
+              )}
             </div>
           </div>
         </div>
