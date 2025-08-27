@@ -218,7 +218,10 @@ export default function Resultados() {
                           />
                         )}
 
-                        <h4 className="rs-subtitle">Resultados</h4>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <h4 className="rs-subtitle">Resultados</h4>
+                          <strong className="rs-subtitle">Probabilidades</strong>
+                        </div>
                         {resultadosArr.length > 0 ? (
                           <div className="resultsList">
                             {resultadosArr.map((r, i) => {

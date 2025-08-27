@@ -311,6 +311,7 @@ const handleGuardar = async () => {
                     Seleccionar imagen
                     <input type="file" accept="image/*" hidden onChange={handleImageSelect} />
                   </label>
+                  <p>Formatos aceptados .png / .jpg / .jpeg</p>
                 </div>
               )}
             </div>
@@ -349,6 +350,7 @@ const handleGuardar = async () => {
 
               <div className="formRow">
                 <label>
+                 {/* Provincia se guarda en la estructura como tal, pero para resultados se lee y en el back se guarda como canton para evitar tener que cambiar el back y migrar la base de nuevo :D*/}  
                   Provincia
                   <input
                     type="text"

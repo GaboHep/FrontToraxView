@@ -184,7 +184,10 @@ export default function Feedbacks() {
                             />
                           )}
 
-                          <h4 className="rs-subtitle">Resultados</h4>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <h4 className="rs-subtitle">Resultados</h4>
+                            <strong className="rs-subtitle">Probabilidades</strong>
+                          </div>
                           {resultadosArr.length > 0 ? (
                             <div className="resultsList">
                               {resultadosArr.map((r, i) => {
@@ -210,6 +213,23 @@ export default function Feedbacks() {
                           <p className="rs-feedback">
                             {registro.feedback || <span className="muted">Sin observaciones.</span>}
                           </p>
+
+                          <div className="dw-actions end">
+                            <button
+                              className="btn ghost"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(registro.key).catch(() => {});
+                              }}
+                            >
+                              Copiar ID
+                            </button>
+
+                            {registro.image ? (
+                              <a className="btn primary" href={registro.image} download={`rx_${registro.key}.png`}>
+                                Descargar imagen
+                              </a>
+                            ) : null}
+                          </div>
                         </div>
                       )}
                     </article>
