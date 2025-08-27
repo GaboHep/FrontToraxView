@@ -500,3 +500,60 @@ body{background:var(--bg); color:var(--text)}
 
 .char-counter.warn { color: #ffcb6b; }   /* casi al límite */
 .char-counter.error { color: #ff9b9b; }  /* muy corto */
+
+
+/* Layout más limpio en la fila de filtros */
+.formRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.field {
+  flex: 1 1 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 500;
+}
+
+/* Select custom */
+.selectWrap { position: relative; }
+.select {
+  appearance: none;
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .02s ease-in-out;
+}
+.select:hover { border-color: rgba(255,255,255,.18); }
+.select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0,149,255,.25);
+}
+
+/* Chevron del select */
+.selectWrap::after{
+  content:"";
+  position:absolute;
+  top:50%; right:12px;
+  width:12px; height:12px;
+  transform:translateY(-50%);
+  pointer-events:none; opacity:.85;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23B9C4CF' d='M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6z'/></svg>");
+  background-repeat:no-repeat; background-size:12px 12px;
+}
+
+.select option {
+  background-color: #000; /* negro */
+  color: #fff;            /* texto blanco para que contraste */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .formRow { flex-direction: column; }
+  .field { flex: 1 1 auto; }
+}

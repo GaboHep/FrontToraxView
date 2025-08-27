@@ -5,7 +5,6 @@ import "./Dashboard.css";
 import { useAuth } from "./context/AuthContext";
 import { API_URL } from "./config";
 
-
 export default function Feedbacks() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -59,6 +58,46 @@ export default function Feedbacks() {
       .catch(() => setRegistros([]))
       .finally(() => setLoading(false));
   };
+
+  // ------------------ EXPORTAR REGISTROS (solo admin) ------------------
+  const [expUserId, setExpUserId] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [format, setFormat] = useState("csv"); // csv | json | zip
+  const [includeImages, setIncludeImages] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      const params = new URLSearchParams();
+      if (expUserId) params.set("user_id", expUserId);
+      if (dateFrom) params.set("date_from", dateFrom);
+      if (dateTo) params.set("date_to", dateTo);
+      params.set("format", format);
+      if (format === "zip" && includeImages) params.set("include_images", "true");
+
+      const url = `${API_URL}/export/registros?${params.toString()}`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error("Export failed");
+
+      const blob = await res.blob();
+      const a = document.createElement("a");
+      const objectUrl = URL.createObjectURL(blob);
+      a.href = objectUrl;
+      const ext = format === "json" ? "json" : (format === "zip" ? "zip" : "csv");
+      a.download = `registros.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (e) {
+      alert("No se pudo descargar el archivo.");
+    } finally {
+      setDownloading(false);
+    }
+  };
+  // --------------------------------------------------------------------
 
   return (
     <div className="dw-wrap">
@@ -126,6 +165,80 @@ export default function Feedbacks() {
             </div>
           </section>
 
+          {/* Exportar registros (solo admin) */}
+          {userRole === "administrador" && (
+            <section className="card" style={{ marginBottom: 14 }}>
+              <h3 className="cardTitle">Exportar registros</h3>
+              <div className="formRow">
+                <label className="field">
+                  Usuario
+                  <div className="selectWrap">
+                    <select
+                      className="select"
+                      value={expUserId}
+                      onChange={(e) => setExpUserId(e.target.value)}
+                    >
+                      <option value="">Todos</option>
+                      {radiologos.map((u) => (
+                        <option key={u.id} value={u.id}>{u.username}</option>
+                      ))}
+                    </select>
+                  </div>
+                </label>
+
+                <label className="field">
+                  Desde
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                  />
+                </label>
+
+                <label className="field">
+                  Hasta
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                  />
+                </label>
+
+                <label className="field">
+                  Formato
+                  <div className="selectWrap">
+                    <select
+                      className="select"
+                      value={format}
+                      onChange={(e) => setFormat(e.target.value)}
+                    >
+                      <option value="csv">CSV</option>
+                      <option value="json">JSON</option>
+                      <option value="zip">ZIP (CSV + imágenes)</option>
+                    </select>
+                  </div>
+                </label>
+
+                {format === "zip" && (
+                  <label className="field" style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <input
+                      type="checkbox"
+                      checked={includeImages}
+                      onChange={(e) => setIncludeImages(e.target.checked)}
+                    />
+                    Incluir imágenes
+                  </label>
+                )}
+              </div>
+
+              <div className="dw-actions end">
+                <button className="btn primary" onClick={handleDownload} disabled={downloading}>
+                  {downloading ? "Generando…" : "Descargar"}
+                </button>
+              </div>
+            </section>
+          )}
+
           {/* Loading */}
           {loading && (
             <section className="card dw-progress" style={{ marginTop: 10 }}>
@@ -136,7 +249,7 @@ export default function Feedbacks() {
             </section>
           )}
 
-          {/* Grid de tarjetas tipo Resultados.jsx */}
+          {/* Grid de tarjetas */}
           {!loading && activoId && (
             registros.length === 0 ? (
               <section className="card" style={{ textAlign: "center" }}>
@@ -147,7 +260,6 @@ export default function Feedbacks() {
                 {registros.map((registro) => {
                   const isOpen = abiertos[registro.key] ?? false;
                   const precision = Number(registro.precision ?? 0);
-                  const precisionPct = `${(precision * 100).toFixed(2)}%`;
                   const resultadosArr = parseResultados(registro.resultados);
 
                   return (
@@ -162,7 +274,7 @@ export default function Feedbacks() {
                         </div>
                         <div className="rs-meta">
                           <span>{registro.inference_date}</span>
-                          {/* <span className="chip sm">{precisionPct}</span> */}
+                          {/* <span className="chip sm">{(precision * 100).toFixed(2)}%</span> */}
                         </div>
                       </header>
 
@@ -184,10 +296,12 @@ export default function Feedbacks() {
                             />
                           )}
 
+                          {/* Encabezado sincronizado con Dashboard */}
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <h4 className="rs-subtitle">Resultados</h4>
                             <strong className="rs-subtitle">Probabilidades</strong>
                           </div>
+
                           {resultadosArr.length > 0 ? (
                             <div className="resultsList">
                               {resultadosArr.map((r, i) => {
@@ -214,6 +328,7 @@ export default function Feedbacks() {
                             {registro.feedback || <span className="muted">Sin observaciones.</span>}
                           </p>
 
+                          {/* Acciones (copiar ID / descargar imagen) */}
                           <div className="dw-actions end">
                             <button
                               className="btn ghost"
